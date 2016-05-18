@@ -14,7 +14,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Exception (EXCEPTION, message)
 import Data.Argonaut.Decode (class DecodeJson)
 import Data.Either (either)
-import Data.Map (insert)
+import Data.Map (singleton)
 import Data.Monoid (mempty)
 import Data.Tuple (Tuple(Tuple))
 import Network.HTTP.Affjax (AJAX)
@@ -73,22 +73,24 @@ mkSuggester' settings = do
        , subscribe: \cb -> runSignal (output ~> cb)
        }
   where
-    initialStore = SuggesterState { currentTerms: mempty
-                                  , currentResults: mempty
-                                  , termsHistory: mempty
-                                  , store: insert mempty mempty mempty
-                                  }
+    initialStore =
+      SuggesterState
+        { currentTerms: mempty
+        , currentResults: mempty
+        , termsHistory: mempty
+        , store: singleton mempty mempty
+        }
 
 -- | Internal function for running the API backend and decoding results.
 runSearch :: forall e a.
-             SuggestionApi a
-          -> Channel (SuggestionResults a)
-          -> (SuggesterState a)
-          -> Eff ( channel :: CHANNEL
-                 , ajax :: AJAX
-                 , err :: EXCEPTION
-                 | e
-                 ) Unit
+     SuggestionApi a
+  -> Channel (SuggestionResults a)
+  -> (SuggesterState a)
+  -> Eff ( channel :: CHANNEL
+         , ajax :: AJAX
+         , err :: EXCEPTION
+         | e
+         ) Unit
 runSearch api chan st@(SuggesterState store) = do
   if terms == mempty || hasSuggestionResults st
     then pure unit
